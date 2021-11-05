@@ -5,6 +5,7 @@ import time
 import argparse
 import asyncio
 import logging
+import shlex
 
 from multiprocessing import Process
 from multiprocessing import Queue
@@ -95,21 +96,24 @@ async def _main(args, c, q, reconnect_bt_addr=None):
         cmd = q.get() # wait command
 
         if ((cmd is not None) and (cmd != "")):
-            cmd = cmd.strip().lower()
-            if (cmd == "pause"):
+            cmd = shlex.split(cmd)
+            print(cmd)
+            cmd = cmd[0]
+            args = cmd[1:]
+            if (cmd.lower() == "pause"):
                 await pause()
                 continue
-            elif (cmd == "unpause"):
+            elif (cmd.lower() == "unpause"):
                 await unpause()
                 continue
-            elif (" " in cmd):
+            elif (args):
                 print("custom command detected")
-                if (cmd.split(" ")[0] == "debug"):
-                    await debug.debug(cmd.split(" ")[1:])
+                if (cmd.lower() == "debug"):
+                    await debug.debug(args)
                     continue
-                elif (cmd.split(" ")[0] == "nfc"):
+                elif (cmd.lower() == "nfc"):
                     print("nfc command detected")
-                    await nfc(controller_state, cmd.split(" ")[1:])
+                    await nfc(controller_state, args)
                     print("nfc command end")
                     continue
         await test_button(controller_state, cmd)
