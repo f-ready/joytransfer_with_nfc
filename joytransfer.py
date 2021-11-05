@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 
-import os
+import os, sys
+
+__file_path__ = os.path.realpath(__file__)
+__joytransfer_path__ = os.path.dirname(__file_path__)
+__parent_path__ = os.path.dirname(__joytransfer_path__)
+__joycontrol_path__ = os.path.join(__parent_path__, "joycontrol")
+sys.path.insert(0, __joycontrol_path__)
+
 import time
 import argparse
 import asyncio
@@ -17,7 +24,6 @@ import joycontrol.debug as debug
 from joycontrol.nfc_tag import NFCTag
 from patch_joycontrol.protocol import controller_protocol_factory
 from patch_joycontrol.server import create_hid_server
-
 
 
 async def pause():
