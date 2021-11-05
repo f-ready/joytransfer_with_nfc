@@ -12,8 +12,35 @@ from multiprocessing import Queue
 from joycontrol import utils
 from joycontrol.controller import Controller
 from joycontrol.memory import FlashMemory
+import joycontrol.debug as debug
+from joycontrol.nfc_tag import NFCTag
 from patch_joycontrol.protocol import controller_protocol_factory
 from patch_joycontrol.server import create_hid_server
+
+
+
+async def pause():
+    controller_state._protocol.pause()
+
+async def unpause():
+    controller_state._protocol.unpause()
+
+async def nfc(cont_state, args):
+    """
+    Usage:
+        nfc <file_name>          Set controller state NFC content to file
+        nfc remove               Remove NFC content from controller state
+    """
+    if cont_state.get_controller() == Controller.JOYCON_L:
+        raise ValueError('NFC content cannot be set for JOYCON_L')
+    elif args[0] == 'remove':
+        cont_state.set_nfc(None)
+        print('Removed nfc content.')
+    else:
+        print("attempting to add nfc content")
+        cont_state.set_nfc(NFCTag.load_amiibo(args[0]))
+        print("added nfc content")
+
 
 
 async def _main(args, c, q, reconnect_bt_addr=None):
@@ -67,6 +94,24 @@ async def _main(args, c, q, reconnect_bt_addr=None):
     while 1:
         cmd = q.get() # wait command
 
+        if ((cmd is not None) and (cmd != "")):
+            cmd = cmd.strip().lower()
+            if (cmd == "pause"):
+                await pause()
+                continue
+            elif (cmd == "unpause"):
+                await unpause()
+                continue
+            elif (" " in cmd):
+                print("custom command detected")
+                if (cmd.split(" ")[0] == "debug"):
+                    await debug.debug(cmd.split(" ")[1:])
+                    continue
+                elif (cmd.split(" ")[0] == "nfc"):
+                    print("nfc command detected")
+                    await nfc(controller_state, cmd.split(" ")[1:])
+                    print("nfc command end")
+                    continue
         await test_button(controller_state, cmd)
 
 '''
